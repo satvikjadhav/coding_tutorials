@@ -69,8 +69,8 @@ def load_stock_data():
 
     stock_price_final = pd.read_csv('stock_list_transformed.csv')
     # DB connection details
-    host = config.DBHOST'soulreaper.mysql.pythonanywhere-services.com'
-    database = config.DATABASE'soulreaper$stockdata'
+    host = config.DBHOST # 'soulreaper.mysql.pythonanywhere-services.com'
+    database = config.DATABASE # 'soulreaper$stockdata'
     user = config.DBUSER
     password = config.DBPASS
     port = config.DBPORT
