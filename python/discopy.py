@@ -11,32 +11,44 @@ class DiscoPy:
     _config = {
         "host": "https://discord.com/api",
         "path": {
-            "validate": "/users/@me"
+            "validate": "/users/@me",
+            "messages": "/channels/",
+            "get_messages": "/messages/search?offset=",
+            "clear_messages": "/messages/search?author_id="
         }
     }
 
 
-    def _post_helper(self, name):
-        _config = self.__config
-        url = f"{_config['host']}{_config['paths'][name]}"
+    def _get_helper(self, name, sub_path):
+
+        _config = self._config
+
+        if hasattr(self, 'channel_id'):
+            if sub_path == 'get_messages':
+                url = f"{_config['host']}{_config['path'][name]}{self.channel_id}{_config['path'][sub_path]}{self.offset}"
+            elif sub_path == 'clear_messages':
+                url = f"{_config['host']}{_config['path'][name]}{self.channel_id}{_config['host'][sub_path]}{self.id}"
+        else:
+            url = f"{_config['host']}{_config['path'][name]}"
+
         try:
-            response = self._session.post(url, headers=self.HEADERS)
+            response = self._session.get(url, headers=self.HEADERS)
         except Exception as ex:
             raise f'Exception Raised :: {ex}'
 
-        if self.debug:
-            logger.debug(f"Response: {response.status_code} {response.content}")
-
         if response.status_code == 200:
             json_data = response.json()
-            # print(json_data)
-            if json_data['status'] == 'success':
+            if json_data:
                 return response
             else:
                 return [json.loads(response.text)]
         else:
             print(f"Invalid token: {self.token}")
             return json.loads(response.text)
+    
+
+    def _del_helper(self, name, sub_path):
+        ...
 
 
     def __init__(self, token) -> None:
@@ -55,11 +67,51 @@ class DiscoPy:
     def _validate(self) -> None:
         """Internal function used to check if the provided discord token works or not"""
 
-        r = self._post_helper('validate')
+        r = self._get_helper('validate', False)
         print(f"Valid token: {self.token}")
         data = r.json()
         self.username = data['username'] + "#" + data['discriminator']
         self.id = data['id']
         self.email = data['email']
         self.phone = data['phone']
+    
+
+    def get_messages(self, channel_id: str, page: int = 0) -> list:
+        """It will get 25 messages from a channel"""
+
+        self.offset = 25 * page
+        self.channel_id = channel_id
+        r = self._get_helper('messages', 'get_messages')
+        if r.status_code in [200, 201, 204]:
+            return r.json()["messages"]
+        else:
+            return []
+
+
+    def clear_messages(self, channel_id: str) -> None:
+        """function to clear messages in a specific channel (specifed by giving a channel id number in str format)"""
+
+        self.channel_id = channel_id
+        total_messages = self._get_helper('messages', 'clear_messages').json()['total_results']
+        page = 0
+        total = 0
+        while total <= total_messages:
+            messages = self.get_messages(channel_id, page)
+            for message in messages:
+                if message[0]["author"]["id"] == self.id:
+                    #TODO: Move delete requests to a function
+                    url = f"https://discord.com/api/channels/{channel_id}/messages/{message[0]['id']}"
+                    r = requests.delete(url, headers=self.HEADERS)
+                    print(r.status_code, r.text)
+                    if r.status_code in [200, 201, 204]:
+                        print(f"{self.username} | Deleted message {message[0]['id']}")
+                        time.sleep(2)
+                        total += 1
+                    else:
+                        print(r.status_code)
+                        print(r.text)
+            page += 1
+        print(f"{self.username} | Deleted {total} messages in {channel_id}")
         
+
+user = DiscoPy(token='')
