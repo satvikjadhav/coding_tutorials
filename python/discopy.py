@@ -28,7 +28,7 @@ class DiscoPy:
             if sub_path == 'get_messages':
                 url = f"{_config['host']}{_config['path'][name]}{self.channel_id}{_config['path'][sub_path]}{self.offset}"
             elif sub_path == 'clear_messages':
-                url = f"{_config['host']}{_config['path'][name]}{self.channel_id}{_config['host'][sub_path]}{self.id}"
+                url = f"{_config['host']}{_config['path'][name]}{self.channel_id}{_config['path'][sub_path]}{self.id}"
         else:
             url = f"{_config['host']}{_config['path'][name]}"
 
@@ -54,24 +54,25 @@ class DiscoPy:
 
         if hasattr(self, 'channel_id') and hasattr(self, 'message_id'):
             if sub_path == 'delete_messages':
-                url = f"{_config['host']}{_config['path'][name]}{self.channel_id}{_config['host'][sub_path]}{self.message_id}"
+                url = f"{_config['host']}{_config['path'][name]}{self.channel_id}{_config['path'][sub_path]}{self.message_id}"
         else:
             url = f"{_config['host']}{_config['path'][name]}"
 
         try:
             response = self._session.delete(url, headers=self.HEADERS)
+            return response
         except Exception as ex:
             raise f'Exception Raised :: {ex}'
 
-        if response.status_code == 200:
-            json_data = response.json()
-            if json_data:
-                return response
-            else:
-                return [json.loads(response.text)]
-        else:
-            print(f"Invalid token: {self.token}")
-            return json.loads(response.text)
+        # if response.status_code == 200:
+        #     json_data = response.json()
+        #     if json_data:
+        #         return response
+        #     else:
+        #         return [json.loads(response.text)]
+        # else:
+        #     print(f"Invalid token: {self.token}")
+        #     return json.loads(response.text)
 
 
     def __init__(self, token) -> None:
